@@ -120,6 +120,15 @@ namespace OpenAI
 
                     foreach (string line in lines)
                     {
+                        var errorResponse = line.Contains("error")
+                                            || (line.Contains("{") && !line.Contains("}"));
+                        if (errorResponse)
+                        {
+                            Debug.LogError($"Error Message: There was an error in the request to ChatGPT.");
+                            isDone = true;
+                            break;
+                        }
+                        
                         var value = line.Replace("data: ", "");
                         if (value.Contains("stop")) 
                         {
