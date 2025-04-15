@@ -513,5 +513,26 @@ namespace OpenAI
             var payload = CreatePayload(request);
             return await DispatchRequest<CreateModerationResponse>(path, UnityWebRequest.kHttpVerbPOST, payload);
         }
+        
+        
+        /// <summary>
+        /// Turn text into spoken audio.
+        /// </summary>
+        /// <param name="request">See <see cref="CreateTTSRequest"/></param>
+        /// <returns>See <see cref="CreateTTSResponse"/></returns>
+        public UnityWebRequest CreateTextToSpeechRequest(CreateTTSRequest request)
+        {
+            var path = $"{BASE_PATH}/audio/speech";
+            var payload = CreatePayload(request);
+            
+            UnityWebRequest req = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.MPEG);
+            req.method = UnityWebRequest.kHttpVerbPOST;
+            req.uploadHandler = new UploadHandlerRaw(payload);
+            req.disposeUploadHandlerOnDispose = true;
+            req.disposeDownloadHandlerOnDispose = true;
+            req.SetHeaders(Configuration, ContentType.ApplicationJson);
+
+            return req;
+        }
     }
 }
