@@ -380,4 +380,14 @@ namespace OpenAI
         public const string Latest = "text-moderation-latest";
     }
     #endregion
+    
+    #region TTS API Data Types
+    
+    public struct CreateTTSRequest {
+        public string model { get; set; }
+        public string input { get; set; }
+        public string voice { get; set; }
+    }
+    
+    #endregion
 }
