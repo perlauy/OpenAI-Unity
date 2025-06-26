@@ -97,6 +97,7 @@ namespace OpenAI
         public Dictionary<string, string> LogitBias { get; set; }
         public string User { get; set; }
         public string SystemFingerprint { get; set; }
+        public List<Tool> Tools { get; set; }
     }
 
     public struct CreateChatCompletionResponse : IResponse
@@ -126,7 +127,31 @@ namespace OpenAI
         public string Role { get; set; }
         public string Content { get; set; }
     }
-    
+
+    public struct Tool
+    {
+        public string Type { get; set; } //	This should always be function
+        public string Name { get; set; } //	The function's name (e.g. get_weather)
+        public string Description { get; set; } //	Details on when and how to use the function
+        public ToolParameters Parameters { get; set; } //	JSON schema defining the function's input arguments
+        public bool Strict { get; set; } //	Whether to enforce strict mode for the function call
+    }
+
+	public struct ToolParameters {
+		public string Type { get; set; }
+		public List<ToolProperty> Properties { get; set; }
+		public List<string> Required { get; set; }
+		public bool AdditionalProperties { get; set; }
+	}
+
+	public struct ToolProperty {
+		public string Name { get; set; }
+		public string Type { get; set; }
+		public string Description { get; set; }
+		public List<string> Enum { get; set; }
+
+	}
+
     #endregion
 
     #region Audio Transcriptions Data Types
