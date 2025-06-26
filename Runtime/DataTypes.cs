@@ -126,11 +126,33 @@ namespace OpenAI
     {
         public string Role { get; set; }
         public string Content { get; set; }
+        public List<ToolCallsType>? ToolCalls { get; set; }
+        public string? Type { get; set; }
+        public string? CallId { get; set; }
+        public string? Output { get; set; }
+    }
+    public struct ToolCallsType
+    {
+        public string Id { get; set; }
+        public string CallId { get; set; }
+        public string Type { get; set; }
+        public ToolFunctionResponse Function { get; set; }
     }
 
+    public struct ToolFunctionResponse
+    {
+        public string Name { get; set; }
+        public string Arguments { get; set; } // Json
+    }
+    
     public struct Tool
     {
         public string Type { get; set; } //	This should always be function
+        public ToolFunction Function { get; set; } //	This should always be function
+    }
+
+    public struct ToolFunction
+    {
         public string Name { get; set; } //	The function's name (e.g. get_weather)
         public string Description { get; set; } //	Details on when and how to use the function
         public ToolParameters Parameters { get; set; } //	JSON schema defining the function's input arguments
@@ -139,13 +161,12 @@ namespace OpenAI
 
 	public struct ToolParameters {
 		public string Type { get; set; }
-		public List<ToolProperty> Properties { get; set; }
+		public Dictionary<string, ToolProperty>Properties { get; set; }
 		public List<string> Required { get; set; }
 		public bool AdditionalProperties { get; set; }
 	}
 
 	public struct ToolProperty {
-		public string Name { get; set; }
 		public string Type { get; set; }
 		public string Description { get; set; }
 		public List<string> Enum { get; set; }
