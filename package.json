@@ -39,6 +39,11 @@
       "displayName": "Whisper",
       "description": "A Whisper audio to text generation example.",
       "path": "Samples~/Whisper"
+    },
+    {
+      "displayName": "ChatGPT with Tools",
+      "description": "ChatGPT example using chat completion API and calls to a weather-getting function.",
+      "path": "Samples~/ChatGPTTools"
     }
   ]
 }
