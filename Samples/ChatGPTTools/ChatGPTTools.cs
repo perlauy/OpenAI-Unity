@@ -18,13 +18,13 @@ namespace OpenAI
         [SerializeField] private RectTransform received;
         [SerializeField] private RectTransform functionCall;
 
-        [SerializeField] private string chatGPTModel = "gpt-4.1";
+        [SerializeField] private string chatGPTModel = "gpt-4.1-nano-2025-04-14";
 
         private float height;
         private OpenAIApi openai = new OpenAIApi();
 
-        private List<ChatMessage> messages = new List<ChatMessage>();
-        private List<Tool> modelTools = new List<Tool>();
+        private List<InputResponse> messages = new List<InputResponse>();
+        private List<ResponseTool> modelTools = new List<ResponseTool>();
 
         private string prompt =
             "Act as a random stranger in a chat room and reply to the questions. Don't break character. Don't ever mention that you are an AI model.";
@@ -60,23 +60,19 @@ namespace OpenAI
                 Required = new() { "location", "units" },
                 AdditionalProperties = false
             };
-            var toolFunction = new ToolFunction()
+            var tool = new ResponseTool()
             {
+                Type = "function",
                 Name = "get_weather",
                 Description = "Retrieves current weather for the given location.",
                 Parameters = parameters,
                 Strict = false
             };
-            var tool = new Tool()
-            {
-                Type = "function",
-                Function = toolFunction
-            };
 
             modelTools.Add(tool);
         }
 
-        private void AppendMessage(ChatMessage message)
+        private void AppendMessage(InputResponse message)
         {
             scroll.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 0);
 
@@ -98,7 +94,7 @@ namespace OpenAI
 
         private async void SendReply()
         {
-            var newMessage = new ChatMessage()
+            var newMessage = new InputResponse()
             {
                 Role = "user",
                 Content = inputField.text
@@ -109,39 +105,60 @@ namespace OpenAI
             if (messages.Count == 0) newMessage.Content = prompt + "\n" + inputField.text;
 
             messages.Add(newMessage);
-
+//Supported values are: 'assistant', 'system', 'developer', and 'user'."
             button.enabled = false;
             inputField.text = "";
             inputField.enabled = false;
 
+            Debug.Log(messages);
             // Complete the instruction
-            var completionResponse = await openai.CreateChatCompletion(new CreateChatCompletionRequest()
+            var completionResponse = await openai.CreateResponse(new ResponseRequest()
             {
                 Model = chatGPTModel,
-                Messages = messages,
+                Input = messages,
                 Tools = modelTools
             });
 
-            var resp = JsonConvert.SerializeObject(completionResponse);
+            HandleResponse(completionResponse, false);
+
+            button.enabled = true;
+            inputField.enabled = true;
+        }
+
+        private async void HandleResponse(Response completionResponse, bool onlyText = true)
+        {
             
+            var resp = JsonConvert.SerializeObject(completionResponse);
             Debug.Log(resp);
-            if (completionResponse.Choices != null && completionResponse.Choices.Count > 0)
+            
+            if (completionResponse.Output.Count > 0)
             {
-                var message = completionResponse.Choices[0].Message;
-
-                if (message.Role == "assistant" && message.ToolCalls != null)
+                foreach (var output in completionResponse.Output)
                 {
-                    foreach (var call in message.ToolCalls)
+                    switch (output.Type)
                     {
-                        HandleFunctionCall(call);
-                    }
-                }
-                else
-                {
-                    message.Content = message.Content.Trim();
+                        case "message":
+                            Debug.Log("Message");
+                            if (output.Content == null) return;
+                            foreach (var msg in output.Content)
+                            {
+                                var message = new InputResponse();
+                                message.Content = msg.Text;
+                                message.Role = output.Role;
+                                messages.Add(message);
+                                AppendMessage(message);
+                            }
+                            
+                            break;
 
-                    messages.Add(message);
-                    AppendMessage(message);
+                        case "function_call":
+                            if (onlyText) return;
+                            
+                            Debug.Log("Function");
+                            HandleFunctionCall(output);
+
+                            break;
+                    }
                 }
             }
             else
@@ -149,57 +166,52 @@ namespace OpenAI
                 Debug.LogWarning("No text was generated from this prompt.");
             }
 
-            button.enabled = true;
-            inputField.enabled = true;
-        }
-
-        private async void HandleFunctionCall(ToolCallsType call)
+        } 
+        
+        private async void HandleFunctionCall(OutputResponse call)
         {
-            // TODO: The calls remains in the messages: check if they have output before resolving again
-            if (call.Function.Name == "get_weather")
+            if (call.Name == "get_weather")
             {
-                Debug.Log(call.Function.Arguments);
-                var args = JsonConvert.DeserializeObject<Dictionary<string, float>>(call.Function.Arguments);
+                Debug.Log(call.Arguments);
+                var args = JsonConvert.DeserializeObject<Dictionary<string, float>>(call.Arguments);
                 Debug.Log(args);
                 if (args.ContainsKey("latitude") && args.ContainsKey("longitude"))
                 {
                     var result = await WeatherAPI.GetWeather(args["latitude"], args["longitude"]);
                     
-                    AppendMessage( new ChatMessage()
-                    {
-                        Role = "function_call",
-                        Content = result.hourly.temperature_2m[0] + "ºC"
-                    });
+                    // AppendMessage( new ChatMessage()
+                    // {
+                        // Role = "function_call",
+                        // Content = result.hourly.temperature_2m[0] + "ºC"
+                    // });
 
-                    // TODO: This doesn't work because it needs to be sent as "input" for responses, not as "messages"; different endpoint
-                    
-                    /*messages.Add(new ChatMessage()
+                    List<InputResponse> input = new();
+
+                    input.Add(new InputResponse()
                     {
-                        Role = "assistant",
-                        Content = "",
                         Type = call.Type,
-                        CallId = call.Id,
-                        Output = result.hourly.temperature_2m.ToString()
+                        Id = call.Id,
+                        CallId = call.CallId,
+                        Name = call.Name,
+                        Arguments = call.Arguments
+                    });
+                    input.Add(new InputResponse()
+                    {
+                        Type = "function_call_output",
+                        CallId = call.CallId,
+                        Output = result.hourly.temperature_2m[0] + "ºC"
                     });
                     
                     // Sent result
-                    var functionCompletionResponse = await openai.CreateChatCompletion(new CreateChatCompletionRequest()
+                    var functionCompletionResponse = await openai.CreateResponse(new ResponseRequest()
                     {
                         Model = chatGPTModel,
-                        Messages = messages,
-                        Tools = modelTools
+                        Input = input,
+                        Tools = modelTools,
+                        Store = true
                     });
 
-                    var functionResp = JsonConvert.SerializeObject(functionCompletionResponse);
-                    Debug.Log(functionResp);
-                    Debug.Log(functionCompletionResponse);
-                    if (functionCompletionResponse.Choices != null && functionCompletionResponse.Choices.Count > 0)
-                    {
-                        // var functionMessage = functionCompletionResponse.Choices[0].Message;
-                        Debug.Log(functionCompletionResponse.Choices.Count);
-                        var foo = JsonConvert.SerializeObject(functionCompletionResponse.Choices[0]);
-                        Debug.Log(foo);
-                    }*/
+                    HandleResponse(functionCompletionResponse);
 
                 }
             }

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
-using NUnit.Framework;
 using Newtonsoft.Json.Serialization;
+using NUnit.Framework;
 
 namespace OpenAI.Tests
 {

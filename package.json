@@ -23,27 +23,27 @@
     {
       "displayName": "ChatGPT",
       "description": "ChatGPT example using chat completion API.",
-      "path": "Samples~/ChatGPT"
+      "path": "Samples/ChatGPT"
     },
     {
       "displayName": "Stream Response",
       "description": "An example that shows how to stream text and chat completion responses.",
-      "path": "Samples~/Stream Response"
+      "path": "Samples/Stream Response"
     },
     {
       "displayName": "DallE",
       "description": "A DALL.E text to image generation example.",
-      "path": "Samples~/DallE"
+      "path": "Samples/DallE"
     },
     {
       "displayName": "Whisper",
       "description": "A Whisper audio to text generation example.",
-      "path": "Samples~/Whisper"
+      "path": "Samples/Whisper"
     },
     {
       "displayName": "ChatGPT with Tools",
       "description": "ChatGPT example using chat completion API and calls to a weather-getting function.",
-      "path": "Samples~/ChatGPTTools"
+      "path": "Samples/ChatGPTTools"
     }
   ]
 }

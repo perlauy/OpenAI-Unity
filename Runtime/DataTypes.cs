@@ -1,9 +1,13 @@
+#nullable enable
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using JetBrains.Annotations;
+using Unity.Plastic.Newtonsoft.Json;
+using UnityEngine.UI;
 
 namespace OpenAI
 {
     #region Common Data Types
+
     public struct Choice
     {
         public string Text { get; set; }
@@ -17,8 +21,10 @@ namespace OpenAI
         public string PromptTokens { get; set; }
         public string CompletionTokens { get; set; }
         public string TotalTokens { get; set; }
+        public int? InputTokens { get; set; }
+        public int? OutputTokens { get; set; }
     }
-    
+
     public class OpenAIFile
     {
         public string Prompt { get; set; }
@@ -49,14 +55,15 @@ namespace OpenAI
 
     public struct Auth
     {
-        [JsonRequired]
-        public string ApiKey { get; set; }
+        [JsonRequired] public string ApiKey { get; set; }
         public string Organization { get; set; }
     }
+
     #endregion
-    
+
     #region Models API Data Types
-    public struct ListModelsResponse: IResponse
+
+    public struct ListModelsResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -80,9 +87,11 @@ namespace OpenAI
         public ApiError Error { get; set; }
         public string Warning { get; set; }
     }
+
     #endregion
 
     #region Chat API Data Types
+
     public sealed class CreateChatCompletionRequest
     {
         public string Model { get; set; }
@@ -112,7 +121,7 @@ namespace OpenAI
         public Usage Usage { get; set; }
         public string SystemFingerprint { get; set; }
     }
-    
+
     public struct ChatChoice
     {
         public ChatMessage Message { get; set; }
@@ -131,6 +140,7 @@ namespace OpenAI
         public string? CallId { get; set; }
         public string? Output { get; set; }
     }
+
     public struct ToolCallsType
     {
         public string Id { get; set; }
@@ -144,11 +154,15 @@ namespace OpenAI
         public string Name { get; set; }
         public string Arguments { get; set; } // Json
     }
-    
+
     public struct Tool
     {
         public string Type { get; set; } //	This should always be function
-        public ToolFunction Function { get; set; } //	This should always be function
+        public ToolFunction? Function { get; set; } //	This should always be function
+        public string? Name { get; set; } //	The function's name (e.g. get_weather)
+        public string? Description { get; set; } //	Details on when and how to use the function
+        public ToolParameters? Parameters { get; set; } //	JSON schema defining the function's input arguments
+        public bool? Strict { get; set; } //	Whether to enforce strict mode for the function call
     }
 
     public struct ToolFunction
@@ -159,20 +173,164 @@ namespace OpenAI
         public bool Strict { get; set; } //	Whether to enforce strict mode for the function call
     }
 
-	public struct ToolParameters {
-		public string Type { get; set; }
-		public Dictionary<string, ToolProperty>Properties { get; set; }
-		public List<string> Required { get; set; }
-		public bool AdditionalProperties { get; set; }
-	}
+    public struct ResponseTool
+    {
+        public string Type { get; set; } //	This should always be function
+        public string Name { get; set; } //	The function's name (e.g. get_weather)
+        public string Description { get; set; } //	Details on when and how to use the function
+        public ToolParameters Parameters { get; set; } //	JSON schema defining the function's input arguments
+        public bool Strict { get; set; } //	Whether to enforce strict mode for the function call
+    }
 
-	public struct ToolProperty {
-		public string Type { get; set; }
-		public string Description { get; set; }
-		public List<string> Enum { get; set; }
+    public struct ToolParameters
+    {
+        public string Type { get; set; }
+        public Dictionary<string, ToolProperty> Properties { get; set; }
+        public List<string> Required { get; set; }
+        public bool AdditionalProperties { get; set; }
+    }
 
-	}
+    public struct ToolProperty
+    {
+        public string Type { get; set; }
+        public string Description { get; set; }
+        public List<string> Enum { get; set; }
+    }
 
+    #endregion
+
+    #region Response Data Types
+
+    // See https://platform.openai.com/docs/api-reference/responses/create
+    public struct ResponseRequest
+    {
+        public bool Background { get; set; }
+        public List<string> Include { get; set; }
+        public List<InputResponse> Input { get; set; }
+        public string? Instructions { get; set; }
+        public int? MaxOutputTokens { get; set; }
+        public int? MaxToolCalls { get; set; }
+        public Dictionary<string, string>? Metadata { get; set; }
+        public string? Model { get; set; }
+        public bool? ParallelToolCalls { get; set; }
+        public string? PreviousResponseId { get; set; }
+        public Prompt? Prompt { get; set; }
+        public Reasoning? Reasoning { get; set; }
+        public string? ServiceTier { get; set; }
+        public bool? Store { get; set; }
+        public bool? Stream { get; set; } // No?
+        public float? Temperature { get; set; }
+        public TextType? Text { get; set; } // Object
+        public string ToolChoice { get; set; }
+        public List<ResponseTool>? Tools { get; set; }
+        public int? TopLogprobs { get; set; }
+        public float? TopP { get; set; }
+        public string? Truncation { get; set; }
+        public string? User { get; set; }
+    }
+
+    public struct TextType
+    {
+        public TextTypeFormat Format { get; set; }
+    }
+
+    public struct TextTypeFormat
+    {
+        public string Type { get; set; } // "text" or "json_object" (json_schema not supported)
+    }
+
+    public struct Prompt
+    {
+        public string Id { get; set; }
+        public Dictionary<string, string>? Variables { get; set; }
+        public string? Version { get; set; }
+    }
+
+    public struct Reasoning
+    {
+        public string? Effort { get; set; } // low, medium or high
+        public string? Summary { get; set; } // auto, concise, or detailed
+    }
+
+    public struct Details
+    {
+        public string Reason { get; set; }
+    }
+
+    public struct Response : IResponse
+    {
+        public bool Background { get; set; } //
+        public float CreatedAt { get; set; } //
+        public string Id { get; set; } //
+        public Details? IncompleteDetails { get; set; } //
+        public string? Instructions { get; set; } //
+        public int? MaxOutputTokens { get; set; } //
+        public int? MaxToolCalls { get; set; } //
+        public Dictionary<string, string>? Metadata { get; set; } //
+        public string? Model { get; set; } //
+        public string? Object { get; set; } //
+        /// Different types possible!!!
+        public List<OutputResponse> Output { get; set; }
+        public bool? ParallelToolCalls { get; set; } //
+        public string? PreviousResponseId { get; set; } //
+        public Prompt? Prompt { get; set; }
+        public Reasoning? Reasoning { get; set; } //
+        public string? ServiceTier { get; set; } //
+        public string Status { get; set; } //
+        public bool Store { get; set; } //
+        public float? Temperature { get; set; } //
+        public TextType Text { get; set; } // 
+        public string ToolChoice { get; set; } //
+        public List<Tool>? Tools { get; set; } //
+        public int? TopLogprobs { get; set; } //
+        public float? TopP { get; set; } //
+        public string? Truncation { get; set; } //
+        public Usage Usage { get; set; } //
+        public string? User { get; set; } //
+        public ApiError Error { get; set; } //
+        public string Warning { get; set; }
+    }
+
+    public class ResponseMessage
+    {
+        public string Id { get; set; }
+        public string Status  { get; set; } // "in_progress", "completed" or "incomplete"
+        public string Type { get; set; } // "message", "function_call";  other types not supported 
+        
+        // output message
+        public string? Role { get; set; } // Always "assistant"
+        
+        // Function tool call
+        public string? Arguments { get; set; }
+        public string? CallId { get; set; }
+        public string? Name { get; set; }
+
+        public string? Output { get; set; }
+        public List<ToolCallsType>? ToolCalls { get; set; }
+    }
+
+    public class OutputResponse : ResponseMessage
+    {
+        public List<ResponseContent> Content  { get; set; } 
+    }
+
+    public class InputResponse : ResponseMessage
+    {
+        public string Content  { get; set; } 
+    }
+
+    public struct ResponseContent
+    {
+        public string Type { get; set; } // "output_text", "refusal"
+        
+        // Output text
+        public string? Text { get; set; }
+        public List<object> Annotations { get; set; }
+
+        // Or refusal
+        public string Refusal { get; set; }
+    }
+    
     #endregion
 
     #region Audio Transcriptions Data Types
@@ -192,23 +350,27 @@ namespace OpenAI
         public string ResponseFormat { get; set; } = AudioResponseFormat.Json;
         public float? Temperature { get; set; } = 0;
     }
-    
-    public class CreateAudioTranscriptionsRequest: CreateAudioRequestBase
+
+    public class CreateAudioTranscriptionsRequest : CreateAudioRequestBase
     {
         public string Language { get; set; }
     }
-    
-    public class CreateAudioTranslationRequest: CreateAudioRequestBase { }
-    
-    public struct CreateAudioResponse: IResponse
+
+    public class CreateAudioTranslationRequest : CreateAudioRequestBase
+    {
+    }
+
+    public struct CreateAudioResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
         public string Text { get; set; }
     }
+
     #endregion
-    
+
     #region Images API Data Types
+
     public class CreateImageRequestBase
     {
         public int? N { get; set; } = 1;
@@ -217,24 +379,24 @@ namespace OpenAI
         public string User { get; set; }
     }
 
-    public sealed class CreateImageRequest: CreateImageRequestBase
+    public sealed class CreateImageRequest : CreateImageRequestBase
     {
         public string Prompt { get; set; }
     }
-    
-    public sealed class CreateImageEditRequest: CreateImageRequestBase
+
+    public sealed class CreateImageEditRequest : CreateImageRequestBase
     {
         public string Image { get; set; }
         public string Mask { get; set; }
         public string Prompt { get; set; }
     }
 
-    public sealed class CreateImageVariationRequest: CreateImageRequestBase
+    public sealed class CreateImageVariationRequest : CreateImageRequestBase
     {
         public string Image { get; set; }
     }
 
-    public struct CreateImageResponse: IResponse
+    public struct CreateImageResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -247,9 +409,11 @@ namespace OpenAI
         public string Url { get; set; }
         public string B64Json { get; set; }
     }
+
     #endregion
 
     #region Embeddins API Data Types
+
     public struct CreateEmbeddingsRequest
     {
         public string Model { get; set; }
@@ -257,7 +421,7 @@ namespace OpenAI
         public string User { get; set; }
     }
 
-    public struct CreateEmbeddingsResponse: IResponse
+    public struct CreateEmbeddingsResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -269,14 +433,16 @@ namespace OpenAI
 
     public struct EmbeddingData
     {
-        public string Object  { get; set; }
+        public string Object { get; set; }
         public List<float> Embedding { get; set; }
         public int Index { get; set; }
     }
+
     #endregion
 
     #region Files API Data Types
-    public struct ListFilesResponse: IResponse
+
+    public struct ListFilesResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -285,7 +451,7 @@ namespace OpenAI
         public bool HasMore { get; set; }
     }
 
-    public struct DeleteResponse: IResponse
+    public struct DeleteResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -299,9 +465,11 @@ namespace OpenAI
         public string File { get; set; }
         public string Purpose { get; set; }
     }
+
     #endregion
 
     #region FineTunes API Data Types
+
     public class CreateFineTuneRequest
     {
         public string TrainingFile { get; set; }
@@ -318,7 +486,7 @@ namespace OpenAI
         public string Suffix { get; set; }
     }
 
-    public struct ListFineTunesResponse: IResponse
+    public struct ListFineTunesResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -326,15 +494,15 @@ namespace OpenAI
         public List<FineTune> Data { get; set; }
         public object NextStartingAfter { get; set; }
     }
-    
-    public struct ListFineTuneEventsResponse: IResponse
+
+    public struct ListFineTuneEventsResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
         public string Object { get; set; }
         public List<FineTuneEvent> Data { get; set; }
     }
-    
+
     public class FineTune
     {
         public string Id { get; set; }
@@ -365,16 +533,18 @@ namespace OpenAI
         public string Level { get; set; }
         public string Message { get; set; }
     }
+
     #endregion
 
     #region Moderations API Data Types
+
     public class CreateModerationRequest
     {
         public string Input { get; set; }
         public string Model { get; set; } = ModerationModel.Latest;
     }
-    
-    public struct CreateModerationResponse: IResponse
+
+    public struct CreateModerationResponse : IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -389,9 +559,11 @@ namespace OpenAI
         public Dictionary<string, bool> Categories { get; set; }
         public Dictionary<string, float> CategoryScores { get; set; }
     }
+
     #endregion
 
     #region Static String Types
+
     public static class ContentType
     {
         public const string MultipartFormData = "multipart/form-data";
@@ -410,7 +582,7 @@ namespace OpenAI
         public const string Url = "url";
         public const string Base64Json = "b64_json";
     }
-    
+
     public static class AudioResponseFormat
     {
         public const string Json = "json";
@@ -419,21 +591,23 @@ namespace OpenAI
         public const string VerboseJson = "verbose_json";
         public const string Vtt = "vtt";
     }
-    
+
     public static class ModerationModel
     {
         public const string Stable = "text-moderation-stable";
         public const string Latest = "text-moderation-latest";
     }
+
     #endregion
-    
+
     #region TTS API Data Types
-    
-    public struct CreateTTSRequest {
+
+    public struct CreateTTSRequest
+    {
         public string model { get; set; }
         public string input { get; set; }
         public string voice { get; set; }
     }
-    
+
     #endregion
 }

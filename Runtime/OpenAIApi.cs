@@ -2,14 +2,15 @@ using System;
 using System.IO;
 using UnityEngine;
 using System.Text;
-using Newtonsoft.Json;
 using System.Threading;
 using System.Globalization;
 using System.Threading.Tasks;
 using UnityEngine.Networking;
 using System.Collections.Generic;
-using Newtonsoft.Json.Serialization;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Action = System.Action;
 
 namespace OpenAI
 {
@@ -78,6 +79,7 @@ namespace OpenAI
 
                 while (!asyncOperation.isDone) await Task.Yield();
                 
+                Debug.Log(request.downloadHandler.text);
                 data = JsonConvert.DeserializeObject<T>(request.downloadHandler.text, jsonSerializerSettings);
             }
             
@@ -533,6 +535,36 @@ namespace OpenAI
             req.SetHeaders(Configuration, ContentType.ApplicationJson);
 
             return req;
+        }
+        
+        /// <summary>
+        ///     Creates a response from a model. Most general request to OpenAI..
+        /// </summary>
+        /// <param name="request">See <see cref="ResponseRequest"/></param>
+        /// <returns>See <see cref="Response"/></returns>
+        public async Task<Response> CreateResponse(ResponseRequest request)
+        {
+            var path = $"{BASE_PATH}/responses";
+            Debug.Log(path);
+            var payload = CreatePayload(request);
+            
+            return await DispatchRequest<Response>(path, UnityWebRequest.kHttpVerbPOST, payload);
+        }
+        
+        /// <summary>
+        ///     Creates a chat completion request as in ChatGPT.
+        /// </summary>
+        /// <param name="request">See <see cref="ResponseRequest"/></param>
+        /// <param name="onResponse">Callback function that will be called when stream response is updated.</param>
+        /// <param name="onComplete">Callback function that will be called when stream response is completed.</param>
+        /// <param name="token">Cancellation token to cancel the request.</param>
+        public void CreateResponseAsync(ResponseRequest request, Action<List<Response>> onResponse, Action onComplete, CancellationTokenSource token)
+        {
+            request.Stream = true;
+            var path = $"{BASE_PATH}/chat/completions";
+            var payload = CreatePayload(request);
+            
+            DispatchRequest(path, UnityWebRequest.kHttpVerbPOST, onResponse, onComplete, token, payload);
         }
     }
 }
