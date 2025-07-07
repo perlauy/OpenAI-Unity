@@ -107,6 +107,12 @@ namespace OpenAI
         public string User { get; set; }
         public string SystemFingerprint { get; set; }
         public List<Tool> Tools { get; set; }
+        public ResponseFormat ResponseFormat { get; set; }
+    }
+
+    public class ResponseFormat
+    {
+        public string Type { get; set; } = ResponseType.Text;
     }
 
     public struct CreateChatCompletionResponse : IResponse
@@ -350,17 +356,15 @@ namespace OpenAI
         public string ResponseFormat { get; set; } = AudioResponseFormat.Json;
         public float? Temperature { get; set; } = 0;
     }
-
-    public class CreateAudioTranscriptionsRequest : CreateAudioRequestBase
+    
+    public class CreateAudioTranscriptionsRequest: CreateAudioRequestBase
     {
         public string Language { get; set; }
     }
-
-    public class CreateAudioTranslationRequest : CreateAudioRequestBase
-    {
-    }
-
-    public struct CreateAudioResponse : IResponse
+    
+    public class CreateAudioTranslationRequest: CreateAudioRequestBase { }
+    
+    public struct CreateAudioResponse: IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -379,24 +383,24 @@ namespace OpenAI
         public string User { get; set; }
     }
 
-    public sealed class CreateImageRequest : CreateImageRequestBase
+    public sealed class CreateImageRequest: CreateImageRequestBase
     {
         public string Prompt { get; set; }
     }
-
-    public sealed class CreateImageEditRequest : CreateImageRequestBase
+    
+    public sealed class CreateImageEditRequest: CreateImageRequestBase
     {
         public string Image { get; set; }
         public string Mask { get; set; }
         public string Prompt { get; set; }
     }
 
-    public sealed class CreateImageVariationRequest : CreateImageRequestBase
+    public sealed class CreateImageVariationRequest: CreateImageRequestBase
     {
         public string Image { get; set; }
     }
 
-    public struct CreateImageResponse : IResponse
+    public struct CreateImageResponse: IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -421,7 +425,7 @@ namespace OpenAI
         public string User { get; set; }
     }
 
-    public struct CreateEmbeddingsResponse : IResponse
+    public struct CreateEmbeddingsResponse: IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -451,7 +455,7 @@ namespace OpenAI
         public bool HasMore { get; set; }
     }
 
-    public struct DeleteResponse : IResponse
+    public struct DeleteResponse: IResponse
     {
         public ApiError Error { get; set; }
         public string Warning { get; set; }
@@ -568,6 +572,12 @@ namespace OpenAI
     {
         public const string MultipartFormData = "multipart/form-data";
         public const string ApplicationJson = "application/json";
+    }
+    
+    public static class ResponseType
+    {
+        public const string Text = "text";
+        public const string JsonObject = "json_object";
     }
 
     public static class ImageSize
