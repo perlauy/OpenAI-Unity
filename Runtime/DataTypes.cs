@@ -617,7 +617,7 @@ namespace OpenAI
         public string model { get; set; }
         public string input { get; set; }
         public string voice { get; set; }
-        public string? instruction { get; set; }
+        public string? instructions { get; set; }
         public string? responseFormat { get; set; }
     }
 
