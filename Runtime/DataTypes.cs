@@ -1,7 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using JetBrains.Annotations;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 using UnityEngine.UI;
 
 namespace OpenAI
